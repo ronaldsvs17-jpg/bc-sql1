@@ -1,0 +1,88 @@
+-- 1. MIEMBROS del club
+CREATE TABLE miembros (
+    id_miembro INT PRIMARY KEY AUTO_INCREMENT,
+    cedula VARCHAR(20) UNIQUE NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    telefono VARCHAR(20),
+    fecha_nacimiento DATE,
+    fecha_ingreso DATE DEFAULT CURRENT_DATE,
+    tipo_membresia ENUM('Básica', 'Premium', 'Familiar', 'Corporativa') NOT NULL,
+    estado ENUM('Activo', 'Inactivo', 'Suspendido') DEFAULT 'Activo',
+    foto_url VARCHAR(255)
+);
+
+-- 2. INSTALACIONES del club
+CREATE TABLE instalaciones (
+    id_instalacion INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL, -- Ej: Piscina, Cancha Tenis, Salón Eventos
+    descripcion TEXT,
+    capacidad INT, -- Personas máximas
+    tarifa_hora DECIMAL(10,2) DEFAULT 0.00, -- Si se cobra por uso
+    estado ENUM('Disponible', 'Mantenimiento', 'Cerrada') DEFAULT 'Disponible'
+);
+
+-- 3. EVENTOS del club
+CREATE TABLE eventos (
+    id_evento INT PRIMARY KEY AUTO_INCREMENT,
+    id_instalacion INT,
+    titulo VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    fecha_inicio DATETIME NOT NULL,
+    fecha_fin DATETIME NOT NULL,
+    cupo_maximo INT,
+    costo_entrada DECIMAL(10,2) DEFAULT 0.00,
+    tipo_evento ENUM('Deportivo', 'Social', 'Cultural', 'Privado'),
+    id_organizador INT, -- FK a miembros
+    FOREIGN KEY (id_instalacion) REFERENCES instalaciones(id_instalacion),
+    FOREIGN KEY (id_organizador) REFERENCES miembros(id_miembro)
+);
+
+-- 4. INSCRIPCIONES a eventos
+CREATE TABLE inscripciones_eventos (
+    id_inscripcion INT PRIMARY KEY AUTO_INCREMENT,
+    id_evento INT NOT NULL,
+    id_miembro INT NOT NULL,
+    fecha_inscripcion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    asistio BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (id_evento) REFERENCES eventos(id_evento),
+    FOREIGN KEY (id_miembro) REFERENCES miembros(id_miembro),
+    UNIQUE(id_evento, id_miembro) -- No inscribirse 2 veces
+);
+
+-- 5. CUOTAS / FEES
+CREATE TABLE cuotas (
+    id_cuota INT PRIMARY KEY AUTO_INCREMENT,
+    id_miembro INT NOT NULL,
+    concepto VARCHAR(150) NOT NULL, -- Ej: Mensualidad Agosto, Inscripción Evento
+    monto DECIMAL(10,2) NOT NULL,
+    fecha_emision DATE DEFAULT CURRENT_DATE,
+    fecha_vencimiento DATE NOT NULL,
+    estado ENUM('Pendiente', 'Pagada', 'Vencida') DEFAULT 'Pendiente',
+    FOREIGN KEY (id_miembro) REFERENCES miembros(id_miembro)
+);
+
+-- 6. PAGOS
+CREATE TABLE pagos (
+    id_pago INT PRIMARY KEY AUTO_INCREMENT,
+    id_cuota INT NOT NULL,
+    monto_pagado DECIMAL(10,2) NOT NULL,
+    fecha_pago DATETIME DEFAULT CURRENT_TIMESTAMP,
+    metodo_pago ENUM('Efectivo', 'Tarjeta', 'Transferencia', 'Nequi'),
+    referencia VARCHAR(100),
+    FOREIGN KEY (id_cuota) REFERENCES cuotas(id_cuota)
+);
+
+-- 7. RESERVAS de instalaciones
+CREATE TABLE reservas (
+    id_reserva INT PRIMARY KEY AUTO_INCREMENT,
+    id_instalacion INT NOT NULL,
+    id_miembro INT NOT NULL,
+    fecha_inicio DATETIME NOT NULL,
+    fecha_fin DATETIME NOT NULL,
+    motivo VARCHAR(200),
+    estado ENUM('Confirmada', 'Cancelada', 'Completada') DEFAULT 'Confirmada',
+    FOREIGN KEY (id_instalacion) REFERENCES instalaciones(id_instalacion),
+    FOREIGN KEY (id_miembro) REFERENCES miembros(id_miembro)
+);
